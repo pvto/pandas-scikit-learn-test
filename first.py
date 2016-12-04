@@ -1,7 +1,19 @@
+# Data pre-processing and ml with Python, pandas, scikit-learn.
+# (Explorative code).
+
+# This uses proprietary data that is not meaningful.
+
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
+
+
+
+
+
+# 1) Build some numerical columns from the data
 
 def mask(df, f):
   return df[f(df)]
@@ -45,18 +57,60 @@ v_ac = pd.merge(v_ac, vopers, on='operations')
 # create operations-in-application column
 v_ac['opersinappl'] = v_ac['operations'].apply(lambda x: x.count(",") + 1)
 
-# with low-freuquency municipalities, group together...
-# set munip var
+# with low-frequency municipalities, group together...
+# ie. set 'munip' var, with value =999 (for <100 appls for munip), or =munipId
 
 v_ac['munip'] = np.where(v_ac.applicCount < 100, 999, v_ac.municipalityId)
 
-# cleanup old columns
+# cleanup extra columns
 v_ac = v_ac.loc[:, ['munip','permitType','operations', 'opersinappl', 'verdictDays','applicCount', 'operCount', 'verdictClass']]
 
 
-# testing...
-v_ac.loc[v_ac['applicCount'] < 100]
+# 2) Create dataset of floats with three binary class columns extracted from 'verdictClass'
+# VerdictClass has values 1) <7d verdict time, 2) < 14d, 3) for others
 
+data = v_ac.loc[:, ['opersinappl', 'applicCount', 'operCount']]
+data['opersinappl'] = data['opersinappl'].apply(float)
+data['applicCount'] = data['applicCount'].apply(float)
+data['operCount'] = data['operCount'].apply(float)
+superv = v_ac.loc[:,'verdictClass']
+enc = preprocessing.OneHotEncoder()
+enc.fit(superv.values.reshape(-1,1))
+vv = enc.transform(superv.values.reshape(-1,1))
+
+
+# 3) ml 1) MPL classifier
+
+from sklearn.neural_network import MLPClassifier
+train = int(len(data) * 0.7)
+TR = data[:train].get_values()
+TRs = vv[:train].toarray()
+clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(10, 10), random_state=1)
+pred = clf.predict(data[train:].get_values())
+
+'''
+>>> pred[:, 2].sum()
+6366
+>>> pred[:, 1].sum()
+1728
+>>> pred[:, 0].sum()
+10
+>>> vv[train:, 2].sum()
+5269.0
+>>> vv[train:, 1].sum()
+513.0
+>>> vv[train:, 0].sum()
+584.0
+>>> (pred[:, 2] - vv[train:, 0]).sum()
+5782.0
+>>> (pred[:, 2] - vv[train:, 2]).sum()
+1097.0
+>>> (pred[:, 1] - vv[train:, 1]).sum()
+1215.0
+>>> (pred[:, 0] - vv[train:, 0]).sum()
+-574.0
+'''
+#misc testing / plotting, commented out
 
 
 #plt.scatter(v_ac['munip'],v_ac['verdictClass'])
