@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
+from sklearn.neural_network import MLPClassifier
 
 
 
@@ -19,7 +20,7 @@ def mask(df, f):
   return df[f(df)]
 
 pd.DataFrame.mask = mask
-df = pd.read_csv('/home/paavo/src/pylearn/data/all-applications-operative-pub-20161031.csv', sep=';',parse_dates=[8,9,10,11,12,13])
+df = pd.read_csv('/work/lupap-learn/data/all-applications-operative-pub-20161031.csv', sep=';',parse_dates=[8,9,10,11,12,13])
 
 #df.head()[df.verdictDays.notnull()]
 df['verdictDays'] = (df.verdictGivenDate - df.submittedDate) / np.timedelta64(1, 'D')
@@ -86,6 +87,7 @@ train = int(len(data) * 0.7)
 TR = data[:train].get_values()
 TRs = vv[:train].toarray()
 clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(10, 10), random_state=1)
+clf.fit(TR, TRs) 
 pred = clf.predict(data[train:].get_values())
 
 '''
