@@ -19,7 +19,7 @@ def mask(df, f):
   return df[f(df)]
 
 pd.DataFrame.mask = mask
-df = pd.read_csv('/home/paavo/src/pylearn/data/all-applications-operative-pub-20161031.csv', sep=';',parse_dates=[8,9,10,11,12,13])
+df = pd.read_csv('data/all-applications-operative-pub-20161031.csv', sep=';',parse_dates=[8,9,10,11,12,13])
 
 #df.head()[df.verdictDays.notnull()]
 df['verdictDays'] = (df.verdictGivenDate - df.submittedDate) / np.timedelta64(1, 'D')
@@ -86,6 +86,7 @@ train = int(len(data) * 0.7)
 TR = data[:train].get_values()
 TRs = vv[:train].toarray()
 clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(10, 10), random_state=1)
+clf.fit(TR, TRs)
 pred = clf.predict(data[train:].get_values())
 
 '''
@@ -101,13 +102,11 @@ pred = clf.predict(data[train:].get_values())
 513.0
 >>> vv[train:, 0].sum()
 584.0
->>> (pred[:, 2] - vv[train:, 0]).sum()
-5782.0
->>> (pred[:, 2] - vv[train:, 2]).sum()
+>>> (pred[:, 2] - vv[train:, 2].toarray().flatten()).sum()
 1097.0
->>> (pred[:, 1] - vv[train:, 1]).sum()
+>>> (pred[:, 1] - vv[train:, 1].toarray().flatten()).sum()
 1215.0
->>> (pred[:, 0] - vv[train:, 0]).sum()
+>>> (pred[:, 0] - vv[train:, 0].toarray().flatten()).sum()
 -574.0
 '''
 #misc testing / plotting, commented out
